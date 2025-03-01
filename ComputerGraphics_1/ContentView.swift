@@ -4,18 +4,29 @@
 //
 //  Created by I3artek on 21/02/2025.
 //
+// Links to resources used:
+// https://metalbyexample.com/fundamentals-of-image-processing/
+// https://www.hackingwithswift.com/books/ios-swiftui/integrating-core-image-with-swiftui
+// https://medium.com/@garejakirit/a-beginners-guide-to-metal-shaders-in-swiftui-5e98ef3cb222
+
+// https://flexmonkey.blogspot.com/2014/10/metal-kernel-functions-compute-shaders.html
+
+// general TODO:
+// create a @State list of all selected filters
+// create a class representing any filter
+// class should have methods: apply, toString (for ptinting)
 
 import SwiftUI
+import CoreImage
 
 struct ContentView: View {
+    @State private var image: Image?
+    @State private var new_image: Image?
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        HStack {
+            TwoImages()
         }
-        .padding()
     }
 }
 

@@ -6,7 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		983022E22D78C06F005CE91E /* Dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 983022E12D78C06F005CE91E /* Dummy.m */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+		983022E02D78C06E005CE91E /* ComputerGraphics_1-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "ComputerGraphics_1-Bridging-Header.h"; sourceTree = "<group>"; };
+		983022E12D78C06F005CE91E /* Dummy.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = Dummy.m; sourceTree = "<group>"; };
 		98AA56A42D68D14500A4B7E5 /* ComputerGraphics_1.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ComputerGraphics_1.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -32,8 +38,10 @@
 		98AA569B2D68D14500A4B7E5 = {
 			isa = PBXGroup;
 			children = (
+				983022E12D78C06F005CE91E /* Dummy.m */,
 				98AA56A62D68D14500A4B7E5 /* ComputerGraphics_1 */,
 				98AA56A52D68D14500A4B7E5 /* Products */,
+				983022E02D78C06E005CE91E /* ComputerGraphics_1-Bridging-Header.h */,
 			);
 			sourceTree = "<group>";
 		};
@@ -82,6 +90,7 @@
 				TargetAttributes = {
 					98AA56A32D68D14500A4B7E5 = {
 						CreatedOnToolsVersion = 16.2;
+						LastSwiftMigration = 1620;
 					};
 				};
 			};
@@ -119,6 +128,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				983022E22D78C06F005CE91E /* Dummy.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -248,6 +258,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ComputerGraphics_1/ComputerGraphics_1.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -264,6 +275,8 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "i3artek.ComputerGraphics-1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "ComputerGraphics_1-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Debug;
@@ -273,6 +286,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ComputerGraphics_1/ComputerGraphics_1.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
@@ -289,6 +303,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "i3artek.ComputerGraphics-1";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "ComputerGraphics_1-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 			};
 			name = Release;

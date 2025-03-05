@@ -8,8 +8,10 @@
 #ifndef ConvMatrix_h
 #define ConvMatrix_h
 
-struct conv_matrix {
-    uint8_t values[9][9];
+//#include <stdint.h>
+
+struct ConvMatrix {
+    int8_t values[9][9];
     uint8_t size_x;
     uint8_t size_y;
     uint8_t anchor_x;
@@ -17,5 +19,6 @@ struct conv_matrix {
     uint32_t divisor;
 };
 
+typedef struct ConvMatrix ConvMatrix;
 
 #endif /* ConvMatrix_h */

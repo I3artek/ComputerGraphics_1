@@ -11,6 +11,14 @@
 
 // https://flexmonkey.blogspot.com/2014/10/metal-kernel-functions-compute-shaders.html
 
+// TODO:
+// [x] editing in the table itself - not possible due to weird Swift limitations
+// [ ] automatic computation of divisor
+// [ ] what is filter offset? is it different from anchor?
+// [x] literal edge cases - by default the pixels outside have value 0.0 (black), so I leave this as it is an acceptable solution (as mentioned on lectures)
+// [ ] saving image to a file
+// [ ] contrast enhancement
+
 import SwiftUI
 
 struct ContentView: View {

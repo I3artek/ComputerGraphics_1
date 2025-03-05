@@ -7,6 +7,7 @@
 // https://medium.com/@garejakirit/a-beginners-guide-to-metal-shaders-in-swiftui-5e98ef3cb222
 
 #include <metal_stdlib>
+#include "ConvMatrix.h"
 using namespace metal;
 
 // ------------------ The color values are not RGBA
@@ -102,6 +103,27 @@ kernel void matrix3x3(texture2d<float, access::read> inTexture [[texture(0)]],
     
     float4 inColor = inTexture.read(gid);
     float4 outColor = float4(inColor[2], inColor[1], inColor[0], inColor[3]);
+    outTexture.write(outColor, gid);
+}
+
+kernel void matrix_filter(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]],
+                         constant ConvMatrix *matrix [[buffer(0)]])
+{
+    float4 inColor;
+    float4 outColor = float4(0.0, 0.0, 0.0, 1.0);
+    uint2 pos;
+    for(int i = 0; i < matrix->size_x; i++)
+    {
+        for(int j = 0; j < matrix->size_y; j++)
+        {
+            pos = uint2(gid[0] + i - matrix->anchor_x, gid[1] + j - matrix->anchor_y);
+            inColor = inTexture.read(pos);
+            outColor += matrix->values[i][j] * inColor;
+        }
+    }
+    outColor = float4(outColor[0] / matrix->divisor, outColor[1] / matrix->divisor, outColor[2] / matrix->divisor, 1.0);
     outTexture.write(outColor, gid);
 }
 

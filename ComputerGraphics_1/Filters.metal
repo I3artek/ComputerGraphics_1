@@ -127,6 +127,35 @@ kernel void matrix_filter(texture2d<float, access::read> inTexture [[texture(0)]
     outTexture.write(outColor, gid);
 }
 
+kernel void pixelize_filter(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]],
+                            constant uint32_t *psize [[buffer(0)]])
+{
+    float4 inColor;
+    float4 outColor = float4(0.0, 0.0, 0.0, 1.0);
+    uint2 pos;
+    uint pos_x;
+    uint pos_y;
+    uint size = *psize;
+    uint divisor = size * size;
+    
+    pos_x = gid[0] - (gid[0] % size);
+    pos_y = gid[1] - (gid[1] % size);
+    
+    for(uint i = 0; i < size; i++) {
+        for(uint j = 0; j < size; j++) {
+            pos = uint2(pos_x + i, pos_y + j);
+            inColor = inTexture.read(pos);
+            outColor += inColor;
+        }
+    }
+    outColor = float4(outColor[0] / divisor, outColor[1] / divisor, outColor[2] / divisor, 1.0);
+    
+    //outColor = float4(outColor[0] / matrix->divisor, outColor[1] / matrix->divisor, outColor[2] / matrix->divisor, 1.0);
+    outTexture.write(outColor, gid);
+}
+
 kernel void move(texture2d<float, access::read> inTexture [[texture(0)]],
                          texture2d<float, access::write> outTexture [[texture(1)]],
                          uint2 gid [[thread_position_in_grid]])

@@ -24,6 +24,7 @@ struct TwoImages: View {
     @State private var anchor_x: String = ""
     @State private var anchor_y: String = ""
     @State private var divisor: String = ""
+    @State private var pixelate_size: String = ""
     // Metal things
     @State private var device: MTLDevice!
     @State private var defaultLibrary: MTLLibrary!
@@ -156,6 +157,19 @@ struct TwoImages: View {
                         filter.matrix.values = MatrixTo9Tuple9Tuple(matrix: filter.arrayMatrix)
                         filters.append(FilterWrapper(filter: filter, description: "3x3 South Emboss"))
                     }
+                    HStack {
+                        Text("Pixelize Filter")
+                        TextField(
+                            "2",
+                            text: $pixelate_size
+                        )
+                        Button("Add") {
+                            let size = Int(pixelate_size)
+                            var filter = PixelizeFilter(size: UInt32(size ?? 1))
+                            filters.append(FilterWrapper(filter: filter, description: "Pixelate with size \(size ?? 1)"))
+                        }
+                    }
+                    
                     Text("Kernel editor")
                     if let currentFilterWrapper = currentFilterWrapper {
                         Text(currentFilterWrapper.description)
@@ -332,6 +346,9 @@ struct TwoImages: View {
                     // apply convolutional filter
                     applyConvFilter(filter: convFilter, texture: texture, outTexture: outTexture)
                 }
+                if let pixFilter = filter as? PixelizeFilter {
+                    applyPixelizeFilter(filter: pixFilter, texture: texture, outTexture: outTexture)
+                }
                 // set the inTexture to the processed one
                 texture = outTexture
                 // create new texture for writing changes
@@ -399,6 +416,40 @@ struct TwoImages: View {
             let matrix = filter.matrix
             var m = ConvMatrix(values: matrix.values, size_x: matrix.size_x, size_y: matrix.size_y, anchor_x: matrix.anchor_x, anchor_y: matrix.anchor_y, divisor: matrix.divisor)
             commandEncoder.setBytes(&m, length: MemoryLayout<ConvMatrix>.stride, index: 0)
+            
+            let threadsPerGroup = MTLSizeMake(8, 8, 1)
+            let threasPerGrid = MTLSizeMake(width, height, 1)
+            commandEncoder.dispatchThreads(threasPerGrid, threadsPerThreadgroup: threadsPerGroup)
+            
+            commandEncoder.endEncoding()
+            commandBuffer.commit()
+            commandBuffer.waitUntilCompleted()
+        } catch {
+            print("Error applying filter: \(error)")
+            return
+        }
+    }
+    
+    func applyPixelizeFilter(filter: PixelizeFilter, texture: MTLTexture, outTexture: MTLTexture) {
+        do {
+            let width = Int(originalImage!.size.width)
+            let height = Int(originalImage!.size.height)
+            guard let commandQueue = device.makeCommandQueue() else { return }
+            guard let kernelFunction = defaultLibrary.makeFunction(name: "pixelize_filter") else { return }
+            let pipelineState = try device.makeComputePipelineState(function: kernelFunction)
+            
+            guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
+            guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else { return }
+            commandEncoder.setComputePipelineState(pipelineState)
+            commandEncoder.setTexture(texture, index: 0)
+            commandEncoder.setTexture(outTexture, index: 1)
+            // pass the matrix data as an additional argument
+            // we need to create a new instance so it is mutable
+            
+            //let matrix = filter.matrix
+            //var m = ConvMatrix(values: matrix.values, size_x: matrix.size_x, size_y: matrix.size_y, anchor_x: matrix.anchor_x, anchor_y: matrix.anchor_y, divisor: matrix.divisor)
+            var size = filter.size
+            commandEncoder.setBytes(&size, length: MemoryLayout<UInt32>.stride, index: 0)
             
             let threadsPerGroup = MTLSizeMake(8, 8, 1)
             let threasPerGrid = MTLSizeMake(width, height, 1)

@@ -23,6 +23,14 @@ struct FilterWrapper: Identifiable {
 protocol Filter {
 }
 
+struct PixelizeFilter: Filter {
+    public var size: UInt32
+    
+    init(size: UInt32) {
+        self.size = size
+    }
+}
+
 struct LinearFilter: Filter {
     public var name: String
     

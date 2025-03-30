@@ -23,6 +23,18 @@ struct FilterWrapper: Identifiable {
 protocol Filter {
 }
 
+struct UniformQuantizationFilter: Filter {
+    public var colorCount: UInt32
+    
+    init(colorCount: UInt32) {
+        if(colorCount == 0) {
+            self.colorCount = 1
+        } else {
+            self.colorCount = colorCount
+        }
+    }
+}
+
 struct PixelizeFilter: Filter {
     public var size: UInt32
     

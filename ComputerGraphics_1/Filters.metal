@@ -69,6 +69,138 @@ kernel void identity(texture2d<float, access::read> inTexture [[texture(0)]],
     outTexture.write(inColor, gid);
 }
 
+kernel void rgb_to_hsv(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]])
+{
+    float4 inColor = inTexture.read(gid);
+    float4 outColor;
+    float M = 0.0;
+    float m = 1.0;
+    float H = 0.0;
+    float S;
+    float V;
+    float R, G, B;
+    uint8_t r, g, b;
+    uint8_t max, min;
+    uint8_t d;
+    R = inColor[0];
+    G = inColor[1];
+    B = inColor[2];
+    r = R * 255;
+    g = G * 255;
+    b = B * 255;
+    
+    for(int i = 0; i < 3; i++) {
+        if(inColor[i] > M) {
+            M = inColor[i];
+        }
+        if(inColor[i] < m) {
+            m = inColor[i];
+        }
+    }
+    max = M * 255;
+    min = m * 255;
+    d = max - min;
+    float D = M - m;
+    
+    if (M == 0) {
+        S = 0;
+    } else {
+        S = (M - m) / M;
+    }
+    
+    V = M;
+    
+    if (M == R) {
+        H = ( (g - b) / d ) % 6;
+//        H = ( (G - B) / D );
+//        while(H >= 6) {
+//            H = H - 6;
+//        }
+    } else if (M == G) {
+        H = (b - r) / d + 2;
+        //H = (B - R) / D + 2;
+    } else if (M == B) {
+        H = (r - g) / d + 4;
+        //H = (R - G) / D + 4;
+    }
+    if(M == m) {
+        H = 0.0;
+    }
+    
+    outColor = float4(H / 6, S, V, 1.0);
+    
+    outTexture.write(outColor, gid);
+}
+
+kernel void hsv_to_rgb(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]])
+{
+    // https://www.rapidtables.com/convert/color/hsv-to-rgb.html
+    float4 inColor = inTexture.read(gid);
+    float H, S, V;
+    float Haha;
+    uint32_t H6;
+    H = inColor[0];
+    S = inColor[1];
+    V = inColor[2];
+    H6 = H * 6;
+    float C = V * S;
+    float something = (H6 % 2) - 1;
+    if (something < 0) {
+        something = 0 - something;
+    }
+    float X = C * (1 - something);
+    float m = V - C;
+    float R = 0.0;
+    float G = 0.0;
+    float B = 0.0;
+    
+    Haha = H * 6;
+    
+    if (Haha == 6 || Haha < 1) {
+        R = C;
+        G = X;
+        B = 0;
+    } else if (Haha < 2) {
+        R = X;
+        G = C;
+        B = 0;
+    } else if (Haha < 3) {
+        R = 0;
+        G = C;
+        B = X;
+    } else if (Haha < 4) {
+        R = 0;
+        G = X;
+        B = C;
+    } else if (Haha < 5) {
+        R = X;
+        G = 0;
+        B = C;
+    } else if (Haha <= 6) {
+        R = C;
+        G = 0;
+        B = X;
+    }
+    
+    float4 outColor = float4(R + m, G + m, B + m, 1.0);
+    
+    outTexture.write(outColor, gid);
+}
+
+kernel void grayscale(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]])
+{
+    float4 inColor = inTexture.read(gid);
+    float gray_color = inColor[0] * 0.299 + inColor[1] * 0.587 + inColor[2] * 0.114;
+    float4 outColor = float4(gray_color, gray_color, gray_color, 1.0);
+    outTexture.write(outColor, gid);
+}
+
 kernel void swap_red_blue(texture2d<float, access::read> inTexture [[texture(0)]],
                          texture2d<float, access::write> outTexture [[texture(1)]],
                          uint2 gid [[thread_position_in_grid]])
@@ -162,4 +294,41 @@ kernel void move(texture2d<float, access::read> inTexture [[texture(0)]],
 {
     float4 inColor = inTexture.read(gid - uint2(1,1));
     outTexture.write(inColor, gid);
+}
+
+kernel void uniform_quantization(texture2d<float, access::read> inTexture [[texture(0)]],
+                         texture2d<float, access::write> outTexture [[texture(1)]],
+                         uint2 gid [[thread_position_in_grid]],
+                            constant uint32_t *pcolor_count [[buffer(0)]])
+{
+    float4 inColor = inTexture.read(gid);
+    float4 outColor = float4(0.0, 0.0, 0.0, 1.0);
+    uint32_t color_count = *pcolor_count;
+    //float color_width = 1.0 / color_count;
+    uint32_t intermediate_color;
+    uint32_t cube_size = 256 / color_count;
+    
+    for(int i = 0; i < 3; i++) {
+//        // I could do the operations on uint8_t (256 values)
+//        // but using uin32_t gives better precision
+//        intermediate_color = 256 * inColor[i];
+//        // calculate the id of the cube
+//        intermediate_color = intermediate_color / cube_size;
+//        // shift the color to the middle of the cube
+//        intermediate_color = intermediate_color * cube_size + 1/2 * cube_size;
+//        // alternative to above two operations:
+//        //intermediate_color = intermediate_color - (intermediate_color % cube_size) + 1/2 * cube_size;
+//        
+//        // convert the color back to [0.0, 1.0]
+//        outColor[i] = intermediate_color / color_count;
+        for(uint8_t j = color_count; j > 0; j--) {
+            if(inColor[i] <= (1.0 / j)) {
+                outColor[i] = 1.0 / j;
+                break;
+            }
+        }
+    }
+    
+    //outColor = float4(outColor[0] / matrix->divisor, outColor[1] / matrix->divisor, outColor[2] / matrix->divisor, 1.0);
+    outTexture.write(outColor, gid);
 }

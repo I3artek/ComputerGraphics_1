@@ -25,6 +25,7 @@ struct TwoImages: View {
     @State private var anchor_y: String = ""
     @State private var divisor: String = ""
     @State private var pixelate_size: String = ""
+    @State private var color_count: String = ""
     // Metal things
     @State private var device: MTLDevice!
     @State private var defaultLibrary: MTLLibrary!
@@ -45,6 +46,28 @@ struct TwoImages: View {
                     }
                     Button("Gamma correction") {
                         filters.append(FilterWrapper(filter: LinearFilter(name: "gamma_correction"), description: "Gamma Correction"))
+                    }
+                    Button("Grayscale") {
+                        filters.append(FilterWrapper(filter: LinearFilter(name: "grayscale"), description: "Grayscale"))
+                    }
+                    Button("RGB to HSV") {
+                        filters.append(FilterWrapper(filter: LinearFilter(name: "rgb_to_hsv"), description: "RGB to HSV"))
+                    }
+                    Button("HSV to RGB") {
+                        filters.append(FilterWrapper(filter: LinearFilter(name: "hsv_to_rgb"), description: "HSV to RGB"))
+                    }
+                }
+                VStack {
+                    Text("Uniform color quantization")
+                    HStack {
+                        TextField(
+                            "1",
+                            text: $color_count
+                        )
+                        Button("Add uniform color quantization") {
+                            let colorCount = UInt32(Int(color_count) ?? 1)
+                            filters.append(FilterWrapper(filter: UniformQuantizationFilter(colorCount: colorCount), description: "Uniform color quantization - " + color_count))
+                        }
                     }
                 }
                 VStack {
@@ -349,6 +372,9 @@ struct TwoImages: View {
                 if let pixFilter = filter as? PixelizeFilter {
                     applyPixelizeFilter(filter: pixFilter, texture: texture, outTexture: outTexture)
                 }
+                if let quantFilter = filter as? UniformQuantizationFilter {
+                    applyQuantizationFilter(filter: quantFilter, texture: texture, outTexture: outTexture)
+                }
                 // set the inTexture to the processed one
                 texture = outTexture
                 // create new texture for writing changes
@@ -450,6 +476,40 @@ struct TwoImages: View {
             //var m = ConvMatrix(values: matrix.values, size_x: matrix.size_x, size_y: matrix.size_y, anchor_x: matrix.anchor_x, anchor_y: matrix.anchor_y, divisor: matrix.divisor)
             var size = filter.size
             commandEncoder.setBytes(&size, length: MemoryLayout<UInt32>.stride, index: 0)
+            
+            let threadsPerGroup = MTLSizeMake(8, 8, 1)
+            let threasPerGrid = MTLSizeMake(width, height, 1)
+            commandEncoder.dispatchThreads(threasPerGrid, threadsPerThreadgroup: threadsPerGroup)
+            
+            commandEncoder.endEncoding()
+            commandBuffer.commit()
+            commandBuffer.waitUntilCompleted()
+        } catch {
+            print("Error applying filter: \(error)")
+            return
+        }
+    }
+    
+    func applyQuantizationFilter(filter: UniformQuantizationFilter, texture: MTLTexture, outTexture: MTLTexture) {
+        do {
+            let width = Int(originalImage!.size.width)
+            let height = Int(originalImage!.size.height)
+            guard let commandQueue = device.makeCommandQueue() else { return }
+            guard let kernelFunction = defaultLibrary.makeFunction(name: "uniform_quantization") else { return }
+            let pipelineState = try device.makeComputePipelineState(function: kernelFunction)
+            
+            guard let commandBuffer = commandQueue.makeCommandBuffer() else { return }
+            guard let commandEncoder = commandBuffer.makeComputeCommandEncoder() else { return }
+            commandEncoder.setComputePipelineState(pipelineState)
+            commandEncoder.setTexture(texture, index: 0)
+            commandEncoder.setTexture(outTexture, index: 1)
+            // pass the matrix data as an additional argument
+            // we need to create a new instance so it is mutable
+            
+            //let matrix = filter.matrix
+            //var m = ConvMatrix(values: matrix.values, size_x: matrix.size_x, size_y: matrix.size_y, anchor_x: matrix.anchor_x, anchor_y: matrix.anchor_y, divisor: matrix.divisor)
+            var colorCount = filter.colorCount
+            commandEncoder.setBytes(&colorCount, length: MemoryLayout<UInt32>.stride, index: 0)
             
             let threadsPerGroup = MTLSizeMake(8, 8, 1)
             let threasPerGrid = MTLSizeMake(width, height, 1)
